@@ -12,6 +12,12 @@ npm test
 npm run dev
 ```
 
+## Change the theme
+
+Set `activeTheme` in [src/theme.js](src/theme.js) to `original`, `deep-sea`,
+`green-screen`, or `desert-run`. The build applies that theme to the page and
+sets the matching mobile browser color. Rebuild the container to ship the change.
+
 ## Build and verify the container
 
 ```sh

@@ -4,6 +4,7 @@ import '@fontsource/press-start-2p/latin-400.css';
 import '@fontsource/vt323/latin-400.css';
 import { createGame, flipTile, hideMismatch, signals, totalPairs } from './game.js';
 import './styles.css';
+import './themes.css';
 
 const bestKey = 'signal-match-best';
 
