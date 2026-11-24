@@ -58,7 +58,7 @@ function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark" aria-hidden="true" /> Sample Arcade</div>
+        <div className="brand"><span className="brand-mark" aria-hidden="true" /> Arcade</div>
         <button className="help" onClick={() => rules.current.showModal()}>
           <span className="help-mark" aria-hidden="true">?</span> How to play
         </button>

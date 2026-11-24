@@ -22,7 +22,7 @@ address=$(docker port "$container" 8080/tcp)
 
 curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
   --max-time 5 "http://$address/" -o "$scratch/index.html"
-grep -Fq '<title>Ghost Relay | Sample Arcade</title>' "$scratch/index.html"
+grep -Fq '<title>Ghost Relay | Arcade</title>' "$scratch/index.html"
 
 for extension in js css; do
   asset=$(grep -Eo "/assets/[a-zA-Z0-9._-]+\.$extension" "$scratch/index.html" | head -n 1)
