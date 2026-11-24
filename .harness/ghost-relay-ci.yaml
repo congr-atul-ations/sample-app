@@ -1,0 +1,88 @@
+pipeline:
+  name: Ghost Relay CI
+  identifier: Ghost_Relay_CI
+  projectIdentifier: ATTest
+  orgIdentifier: sandboxtraining
+  description: Test, package, and publish the Ghost Relay frontend image.
+  tags:
+    app: sample-app
+  properties:
+    ci:
+      codebase:
+        connectorRef: congratulations
+        repoName: sample-app
+        build: <+input>
+  stages:
+    - stage:
+        name: Verify and package
+        identifier: verify_and_package
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  name: Test game
+                  identifier: test_game
+                  type: Run
+                  timeout: 5m
+                  spec:
+                    shell: Sh
+                    command: |-
+                      set -eu
+                      mkdir -p reports
+                      docker run --rm --network none --volume "$PWD:/app:ro" --workdir /app \
+                        node:24-bookworm-slim node --test --test-reporter=junit > reports/unit.xml
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - reports/unit.xml
+              - step:
+                  name: Build frontend image
+                  identifier: build_frontend_image
+                  type: Run
+                  timeout: 15m
+                  spec:
+                    shell: Sh
+                    command: |-
+                      set -eu
+                      commit=$(git rev-parse HEAD)
+                      docker build --pull --progress=plain --platform linux/amd64 \
+                        --label "org.opencontainers.image.revision=$commit" \
+                        --label "org.opencontainers.image.source=https://github.com/congr-atul-ations/sample-app" \
+                        --tag "atltvri/sample-app:hrns-sha-$commit" .
+              - step:
+                  name: Smoke test container
+                  identifier: smoke_test_container
+                  type: Run
+                  timeout: 5m
+                  spec:
+                    shell: Sh
+                    command: |-
+                      set -eu
+                      ./scripts/smoke-image.sh "atltvri/sample-app:hrns-sha-$(git rev-parse HEAD)"
+              - step:
+                  name: Publish tested image to Docker Hub
+                  identifier: publish_tested_image
+                  type: Run
+                  timeout: 10m
+                  when:
+                    stageStatus: Success
+                    condition: <+codebase.branch> == "main" && <+codebase.build.type> != "PR"
+                  spec:
+                    shell: Sh
+                    envVariables:
+                      DOCKERHUB_TOKEN: <+secrets.getValue("docker-access")>
+                    command: |-
+                      set -eu
+                      export DOCKER_CONFIG=$(mktemp -d)
+                      trap 'docker logout >/dev/null 2>&1 || true' EXIT
+                      printf '%s\n' "$DOCKERHUB_TOKEN" | docker login --username atltvri --password-stdin
+                      docker push "atltvri/sample-app:hrns-sha-$(git rev-parse HEAD)"
