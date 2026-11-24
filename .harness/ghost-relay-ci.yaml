@@ -45,6 +45,18 @@ pipeline:
                         paths:
                           - reports/unit.xml
               - step:
+                  name: Enable ARM64 emulation
+                  identifier: enable_arm64_emulation
+                  type: Run
+                  timeout: 5m
+                  spec:
+                    shell: Sh
+                    command: |-
+                      set -eu
+                      if ! grep -qs '^flags: .*F' /proc/sys/fs/binfmt_misc/qemu-aarch64; then
+                        docker run --privileged --rm tonistiigi/binfmt@sha256:400a4873b838d1b89194d982c45e5fb3cda4593fbfd7e08a02e76b03b21166f0 --install arm64
+                      fi
+              - step:
                   name: Build frontend image
                   identifier: build_frontend_image
                   type: Run
@@ -54,7 +66,7 @@ pipeline:
                     command: |-
                       set -eu
                       commit=$(git rev-parse HEAD)
-                      docker build --pull --progress=plain --platform linux/amd64 \
+                      docker build --pull --progress=plain --platform linux/arm64 \
                         --label "org.opencontainers.image.revision=$commit" \
                         --label "org.opencontainers.image.source=https://github.com/congr-atul-ations/sample-app" \
                         --tag "atltvri/sample-app:hrns-sha-$commit" .
@@ -67,7 +79,11 @@ pipeline:
                     shell: Sh
                     command: |-
                       set -eu
-                      ./scripts/smoke-image.sh "atltvri/sample-app:hrns-sha-$(git rev-parse HEAD)"
+                      image="atltvri/sample-app:hrns-sha-$(git rev-parse HEAD)"
+                      platform=$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")
+                      echo "Built platform: $platform"
+                      test "$platform" = linux/arm64
+                      ./scripts/smoke-image.sh "$image"
               - step:
                   name: Publish tested image to Docker Hub
                   identifier: publish_tested_image
