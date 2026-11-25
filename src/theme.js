@@ -1,4 +1,4 @@
-const activeTheme = 'deep-sea';
+const activeTheme = 'green-screen';
 
 const themeColors = {
   original: '#151b17',
